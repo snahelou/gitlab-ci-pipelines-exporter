@@ -28,6 +28,9 @@ projects:
     ref: master
   - name: bar/project
     ref: master
+  # Wildcard is supported if you want to monitor all owned projects
+  #- name: '*'
+  #  ref: master
 EOF
 
 # If you have docker installed, it is as easy as :
