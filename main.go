@@ -8,10 +8,10 @@ import (
 	"os"
 	"time"
 
+	"github.com/heptiolabs/healthcheck"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	gitlab "github.com/xanzy/go-gitlab"
-
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -31,7 +31,7 @@ type project struct {
 }
 
 var (
-	listenAddress = flag.String("listen-address", ":80", "Listening address")
+	listenAddress = flag.String("listen-address", ":8080", "Listening address")
 	configPath    = flag.String("config", "~/.gitlab-ci-pipelines-exporter.yml", "Config file path")
 )
 
@@ -174,8 +174,16 @@ func main() {
 	gc := gitlab.NewClient(nil, config.Gitlab.Token)
 	gc.SetBaseURL(config.Gitlab.URL)
 
-	task(&config, gc)
+	go task(&config, gc)
+
 	// Expose the registered metrics via HTTP.
-	http.Handle("/metrics", promhttp.Handler())
-	log.Fatal(http.ListenAndServe(*listenAddress, nil))
+	health := healthcheck.NewHandler()
+	health.AddLivenessCheck("goroutine-threshold", healthcheck.GoroutineCountCheck(50))
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health", health.LiveEndpoint)
+	mux.Handle("/metrics", promhttp.Handler())
+
+	log.Fatal(http.ListenAndServe(*listenAddress, mux))
 }
+

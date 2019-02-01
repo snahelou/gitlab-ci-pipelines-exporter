@@ -27,6 +27,6 @@ RUN apk add --no-cache ca-certificates && update-ca-certificates
 
 COPY --from=builder /go/src/github.com/mvisonneau/gitlab-ci-pipelines-exporter/gitlab-ci-pipelines-exporter /usr/local/bin
 
-EXPOSE 80/tcp
+EXPOSE 8080/tcp
 ENTRYPOINT ["/usr/local/bin/gitlab-ci-pipelines-exporter"]
 CMD [""]
